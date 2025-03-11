@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package tg;
+
+option go_package = "internal/generated/tgpb";
+
+service TgService {
+  rpc DownloadVideo (DownloadVideoRequest) returns (DownloadVideoResponse);
+}
+
+message DownloadVideoRequest {
+  string url = 1;
+}
+
+message DownloadVideoResponse {
+  string filename = 1;
+}
