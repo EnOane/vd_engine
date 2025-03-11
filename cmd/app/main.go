@@ -2,22 +2,18 @@ package main
 
 import (
 	"context"
+	tgpb "github.com/EnOane/vd_engine/internal/generated"
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	pb "vd_engine/internal/generated"
 )
 
 type server struct {
-	pb.UnimplementedTgServiceServer
+	tgpb.UnimplementedTgServiceServer
 }
 
-func (s *server) DownloadVideo(ctx context.Context, req *pb.DownloadVideoRequest) (*pb.DownloadVideoResponse, error) {
-	return &pb.DownloadVideoResponse{Filename: "Hello, "}, nil
-}
-
-func (s *server) mustEmbedUnimplementedTgServiceServer() {
-	panic("implement me")
+func (s *server) DownloadVideo(ctx context.Context, req *tgpb.DownloadVideoRequest) (*tgpb.DownloadVideoResponse, error) {
+	return &tgpb.DownloadVideoResponse{Filename: "Hello, "}, nil
 }
 
 func main() {
@@ -29,7 +25,7 @@ func main() {
 
 	// Создаем gRPC-сервер
 	s := grpc.NewServer()
-	pb.RegisterTgServiceServer(s, &server{})
+	tgpb.RegisterTgServiceServer(s, &server{})
 
 	log.Println("Starting server on :50051")
 	if err := s.Serve(lis); err != nil {
