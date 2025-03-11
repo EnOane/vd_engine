@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TgService_Download_FullMethodName = "/tg.TgService/Download"
+	TgService_DownloadVideo_FullMethodName = "/tg.TgService/DownloadVideo"
 )
 
 // TgServiceClient is the client API for TgService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TgServiceClient interface {
-	Download(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+	DownloadVideo(ctx context.Context, in *DownloadVideoRequest, opts ...grpc.CallOption) (*DownloadVideoResponse, error)
 }
 
 type tgServiceClient struct {
@@ -37,10 +37,10 @@ func NewTgServiceClient(cc grpc.ClientConnInterface) TgServiceClient {
 	return &tgServiceClient{cc}
 }
 
-func (c *tgServiceClient) Download(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+func (c *tgServiceClient) DownloadVideo(ctx context.Context, in *DownloadVideoRequest, opts ...grpc.CallOption) (*DownloadVideoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Response)
-	err := c.cc.Invoke(ctx, TgService_Download_FullMethodName, in, out, cOpts...)
+	out := new(DownloadVideoResponse)
+	err := c.cc.Invoke(ctx, TgService_DownloadVideo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *tgServiceClient) Download(ctx context.Context, in *Request, opts ...grp
 // All implementations must embed UnimplementedTgServiceServer
 // for forward compatibility.
 type TgServiceServer interface {
-	Download(context.Context, *Request) (*Response, error)
+	DownloadVideo(context.Context, *DownloadVideoRequest) (*DownloadVideoResponse, error)
 	mustEmbedUnimplementedTgServiceServer()
 }
 
@@ -62,8 +62,8 @@ type TgServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTgServiceServer struct{}
 
-func (UnimplementedTgServiceServer) Download(context.Context, *Request) (*Response, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Download not implemented")
+func (UnimplementedTgServiceServer) DownloadVideo(context.Context, *DownloadVideoRequest) (*DownloadVideoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadVideo not implemented")
 }
 func (UnimplementedTgServiceServer) mustEmbedUnimplementedTgServiceServer() {}
 func (UnimplementedTgServiceServer) testEmbeddedByValue()                   {}
@@ -86,20 +86,20 @@ func RegisterTgServiceServer(s grpc.ServiceRegistrar, srv TgServiceServer) {
 	s.RegisterService(&TgService_ServiceDesc, srv)
 }
 
-func _TgService_Download_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Request)
+func _TgService_DownloadVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadVideoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TgServiceServer).Download(ctx, in)
+		return srv.(TgServiceServer).DownloadVideo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TgService_Download_FullMethodName,
+		FullMethod: TgService_DownloadVideo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TgServiceServer).Download(ctx, req.(*Request))
+		return srv.(TgServiceServer).DownloadVideo(ctx, req.(*DownloadVideoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +112,8 @@ var TgService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*TgServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Download",
-			Handler:    _TgService_Download_Handler,
+			MethodName: "DownloadVideo",
+			Handler:    _TgService_DownloadVideo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

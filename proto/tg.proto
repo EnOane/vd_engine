@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package tg;
 
-option go_package = "internal/generated/tgpb";
+option go_package = "generated/tgpb";
 
 service TgService {
   rpc DownloadVideo (DownloadVideoRequest) returns (DownloadVideoResponse);

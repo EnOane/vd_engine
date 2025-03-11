@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	tgpb "github.com/EnOane/vd_engine/internal/generated"
+	tgpb "github.com/EnOane/vd_engine/generated"
 	"google.golang.org/grpc"
 	"log"
 	"net"

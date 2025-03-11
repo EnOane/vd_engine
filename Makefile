@@ -1,5 +1,5 @@
-PROTO_DIR=pkg/proto
-OUT_DIR=internal/generated
+PROTO_DIR=proto
+OUT_DIR=generated
 
 PROTOC_GEN_GO=$(shell which protoc-gen-go)
 
