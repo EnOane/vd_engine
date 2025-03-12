@@ -5,7 +5,7 @@ package tg;
 option go_package = "generated/tgpb";
 
 service TgService {
-  rpc DownloadVideo (DownloadVideoRequest) returns (DownloadVideoResponse);
+  rpc DownloadVideo (DownloadVideoRequest) returns (stream DownloadVideoResponse);
 }
 
 message DownloadVideoRequest {
@@ -13,5 +13,5 @@ message DownloadVideoRequest {
 }
 
 message DownloadVideoResponse {
-  string filename = 1;
+  bytes chunk = 1;
 }
