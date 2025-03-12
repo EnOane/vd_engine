@@ -45,7 +45,12 @@ func Execute(uri *url.URL) (<-chan []byte, string, error) {
 				break
 			}
 
-			out <- buffer[:n]
+			// при создании слайса выделяется память общая под данные
+			// и при отправке в канал слайс так и ссылается на одну область
+			// соответсвенно изменение вызывает состояние гонки
+			chunk := make([]byte, n)
+			copy(chunk, buffer[:n])
+			out <- chunk
 		}
 	}()
 
