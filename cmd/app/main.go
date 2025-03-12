@@ -1,34 +1,25 @@
 package main
 
 import (
-	"context"
 	tgpb "github.com/EnOane/vd_engine/generated"
+	"github.com/EnOane/vd_engine/internal/api"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-	"log"
 	"net"
 )
 
-type server struct {
-	tgpb.UnimplementedTgServiceServer
-}
-
-func (s *server) DownloadVideo(ctx context.Context, req *tgpb.DownloadVideoRequest) (*tgpb.DownloadVideoResponse, error) {
-	return &tgpb.DownloadVideoResponse{Filename: "Hello, "}, nil
-}
-
 func main() {
-	// Создаем TCP-слушатель
-	lis, err := net.Listen("tcp", ":50051")
+	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatal().Msgf("failed to listen: %v", err)
 	}
 
 	// Создаем gRPC-сервер
-	s := grpc.NewServer()
-	tgpb.RegisterTgServiceServer(s, &server{})
+	server := grpc.NewServer()
+	tgpb.RegisterTgServiceServer(server, &api.GrpcServer{})
 
-	log.Println("Starting server on :50051")
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	log.Info().Msgf("Starting server on :50051")
+	if err := server.Serve(listener); err != nil {
+		log.Fatal().Msgf("failed to serve: %v", err)
 	}
 }
