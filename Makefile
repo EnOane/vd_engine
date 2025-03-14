@@ -1,4 +1,4 @@
-PROTO_DIR=proto
+PROTO_DIR=./internal/api/proto
 OUT_DIR=generated
 
 PROTOC_GEN_GO=$(shell which protoc-gen-go)
@@ -7,7 +7,7 @@ all: generate
 
 generate:
 	@if [ -z "$(PROTOC_GEN_GO)" ]; then \
-		echo "protoc-gen-go не найден. Установите его с помощью 'go install google.golang.org/protobuf/cmd/protoc-gen-go@latest'"; \
+		echo "protoc-gen-go не найден. Установите его с помощью 'go install google.golang.org/protobuf/cmd/protoc-gen-go'"; \
 		exit 1; \
 	fi
 	mkdir -p $(OUT_DIR)

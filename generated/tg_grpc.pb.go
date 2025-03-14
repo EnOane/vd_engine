@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TgService_DownloadVideo_FullMethodName = "/tg.TgService/DownloadVideo"
+	TgService_DownloadVideoStream_FullMethodName = "/tg.TgService/DownloadVideoStream"
 )
 
 // TgServiceClient is the client API for TgService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TgServiceClient interface {
-	DownloadVideo(ctx context.Context, in *DownloadVideoRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadVideoResponse], error)
+	DownloadVideoStream(ctx context.Context, in *DownloadVideoStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadVideoStreamResponse], error)
 }
 
 type tgServiceClient struct {
@@ -37,13 +37,13 @@ func NewTgServiceClient(cc grpc.ClientConnInterface) TgServiceClient {
 	return &tgServiceClient{cc}
 }
 
-func (c *tgServiceClient) DownloadVideo(ctx context.Context, in *DownloadVideoRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadVideoResponse], error) {
+func (c *tgServiceClient) DownloadVideoStream(ctx context.Context, in *DownloadVideoStreamRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DownloadVideoStreamResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TgService_ServiceDesc.Streams[0], TgService_DownloadVideo_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &TgService_ServiceDesc.Streams[0], TgService_DownloadVideoStream_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[DownloadVideoRequest, DownloadVideoResponse]{ClientStream: stream}
+	x := &grpc.GenericClientStream[DownloadVideoStreamRequest, DownloadVideoStreamResponse]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -54,13 +54,13 @@ func (c *tgServiceClient) DownloadVideo(ctx context.Context, in *DownloadVideoRe
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TgService_DownloadVideoClient = grpc.ServerStreamingClient[DownloadVideoResponse]
+type TgService_DownloadVideoStreamClient = grpc.ServerStreamingClient[DownloadVideoStreamResponse]
 
 // TgServiceServer is the server API for TgService service.
 // All implementations must embed UnimplementedTgServiceServer
 // for forward compatibility.
 type TgServiceServer interface {
-	DownloadVideo(*DownloadVideoRequest, grpc.ServerStreamingServer[DownloadVideoResponse]) error
+	DownloadVideoStream(*DownloadVideoStreamRequest, grpc.ServerStreamingServer[DownloadVideoStreamResponse]) error
 	mustEmbedUnimplementedTgServiceServer()
 }
 
@@ -71,8 +71,8 @@ type TgServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTgServiceServer struct{}
 
-func (UnimplementedTgServiceServer) DownloadVideo(*DownloadVideoRequest, grpc.ServerStreamingServer[DownloadVideoResponse]) error {
-	return status.Errorf(codes.Unimplemented, "method DownloadVideo not implemented")
+func (UnimplementedTgServiceServer) DownloadVideoStream(*DownloadVideoStreamRequest, grpc.ServerStreamingServer[DownloadVideoStreamResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadVideoStream not implemented")
 }
 func (UnimplementedTgServiceServer) mustEmbedUnimplementedTgServiceServer() {}
 func (UnimplementedTgServiceServer) testEmbeddedByValue()                   {}
@@ -95,16 +95,16 @@ func RegisterTgServiceServer(s grpc.ServiceRegistrar, srv TgServiceServer) {
 	s.RegisterService(&TgService_ServiceDesc, srv)
 }
 
-func _TgService_DownloadVideo_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(DownloadVideoRequest)
+func _TgService_DownloadVideoStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadVideoStreamRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TgServiceServer).DownloadVideo(m, &grpc.GenericServerStream[DownloadVideoRequest, DownloadVideoResponse]{ServerStream: stream})
+	return srv.(TgServiceServer).DownloadVideoStream(m, &grpc.GenericServerStream[DownloadVideoStreamRequest, DownloadVideoStreamResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TgService_DownloadVideoServer = grpc.ServerStreamingServer[DownloadVideoResponse]
+type TgService_DownloadVideoStreamServer = grpc.ServerStreamingServer[DownloadVideoStreamResponse]
 
 // TgService_ServiceDesc is the grpc.ServiceDesc for TgService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -115,8 +115,8 @@ var TgService_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "DownloadVideo",
-			Handler:       _TgService_DownloadVideo_Handler,
+			StreamName:    "DownloadVideoStream",
+			Handler:       _TgService_DownloadVideoStream_Handler,
 			ServerStreams: true,
 		},
 	},
