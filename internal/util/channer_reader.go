@@ -3,14 +3,12 @@ package util
 import (
 	"bytes"
 	"io"
-	"sync"
 )
 
 // ChannelReader - ридер для чтения данных из канала
 type ChannelReader struct {
 	ch     <-chan []byte
 	buffer *bytes.Buffer
-	mu     sync.Mutex
 	done   bool
 }
 
@@ -23,9 +21,6 @@ func NewChannelReader(ch <-chan []byte) *ChannelReader {
 }
 
 func (r *ChannelReader) Read(p []byte) (n int, err error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	if r.buffer.Len() == 0 {
 		if r.done {
 			return 0, io.EOF
