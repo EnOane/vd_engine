@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/EnOane/vd_engine/internal/config"
+	"github.com/EnOane/vd_engine/internal/core/interfaces"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
@@ -16,7 +17,7 @@ type Client struct {
 
 var minioClient *minio.Client
 
-func NewS3Client() *Client {
+func NewS3Client() interfaces.S3Interface {
 	return &Client{client: minioClient}
 }
 
@@ -40,7 +41,7 @@ func MustConnect() {
 	minioClient = mcl
 }
 
-// UploadStream загрузка файла в хранилище
+// UploadStream загружает поток в S3
 func (s3 *Client) UploadStream(ctx context.Context, filename string, reader io.Reader) (*minio.UploadInfo, error) {
 	m, err := s3.client.PutObject(ctx, config.AppConfig.S3Config.S3Bucket, filename, reader, -1, minio.PutObjectOptions{})
 	return &m, err

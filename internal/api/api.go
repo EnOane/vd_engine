@@ -4,8 +4,8 @@ import (
 	"fmt"
 	tgpb "github.com/EnOane/vd_engine/generated"
 	"github.com/EnOane/vd_engine/internal/config"
+	"github.com/EnOane/vd_engine/internal/core/interfaces"
 	"github.com/EnOane/vd_engine/internal/di"
-	"github.com/EnOane/vd_engine/internal/service"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"net"
@@ -36,6 +36,6 @@ func (s *grpcServer) DownloadVideoStream(
 	request *tgpb.DownloadVideoStreamRequest,
 	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
 ) error {
-	sr := di.Inject[*service.DownloadService]()
+	sr := di.Inject[interfaces.DownloadServiceInterface]()
 	return sr.DownloadAndSendToClient(request, stream)
 }
