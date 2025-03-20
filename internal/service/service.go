@@ -62,7 +62,7 @@ func (d *DownloadService) DownloadAndSendToClient(
 		return fmt.Errorf("failed to upload video to S3: %w", err)
 	}
 
-	log.Info().Msgf("Video was successfully send to client: '%v' and uploaded to S3", request.ClientId)
+	log.Info().Msgf("Video was successfully send to client and uploaded to S3")
 
 	return nil
 }
