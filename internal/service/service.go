@@ -2,70 +2,82 @@ package service
 
 import (
 	"context"
+	"fmt"
 	dl "github.com/EnOane/cli_downloader/pkg/downloader"
 	tgpb "github.com/EnOane/vd_engine/generated"
 	"github.com/EnOane/vd_engine/internal/infr/s3"
 	"github.com/EnOane/vd_engine/internal/util"
+	"github.com/minio/minio-go/v7"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-	"io"
 	"net/url"
-	"os"
 	"path/filepath"
 )
 
-// 50 мб лимит отправки видео в ТГ, как быть с остальными клиентами?
-// отправлять ссылку на файл в s3
-// если формат mp4 все-таки не поддерживается - отправлять как документ (только тг)
+type streamR grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse]
 
-func Execute(
+type DownloadService struct {
+	s3 *s3.Client
+}
+
+func NewDownloadService(s3 *s3.Client) *DownloadService {
+	return &DownloadService{s3}
+}
+
+func (d *DownloadService) DownloadAndSendToClient(
 	request *tgpb.DownloadVideoStreamRequest,
 	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
 ) error {
-	// проверка url
+	// Проверка URL
 	uri, err := url.Parse(request.Url)
 	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+		return fmt.Errorf("invalid URL: %w", err)
 	}
 
-	in, filenamePath, err := DownloadVideoStream(uri)
+	in, filenamePath, err := downloadVideoStream(uri)
 	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+		return fmt.Errorf("failed to download video stream: %w", err)
 	}
 
-	// первое сообщение в потоке - имя файла
-	err = sendFilename(filenamePath, stream)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+	// TODO:
+	// проверка клиента и лимитов? нарушение, можно слать только поле лимита загрузки на клиент
+	// 1. отправка в s3 синхронно до лимита
+	// 2. если лимит превышен - отправка после уже ссылки
+	// 3. если до лимита - отправка чанками
+
+	// Отправка имени файла
+	if err := sendFilename(filenamePath, stream); err != nil {
+		return fmt.Errorf("failed to send filename: %w", err)
 	}
 
-	// второе сообщение в потоке - chunk файла
+	// Отправка чанков видео
 	out, err := sendChunks(in, stream)
 	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+		return fmt.Errorf("failed to send video chunks: %w", err)
 	}
 
-	// конвейрная загрузка в s3
-	err = uploadToS3(out, filenamePath)
+	// Отправка в S3
+	_, err = uploadToS3(d.s3, out, filenamePath)
 	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+		return fmt.Errorf("failed to upload video to S3: %w", err)
 	}
 
-	log.Info().Msg("video was uploaded to s3")
+	log.Info().Msgf("Video was successfully send to client: '%v' and uploaded to S3", request.ClientId)
 
 	return nil
 }
 
+// downloadVideoStream создание видео потока
+func downloadVideoStream(uri *url.URL) (<-chan []byte, string, error) {
+	ch, fname, err := dl.DownloadStreamVideo(uri)
+	if err != nil {
+		return nil, "", fmt.Errorf("downloading video failed: %w", err)
+	}
+	return ch, fname, nil
+}
+
 // sendFilename отправка имени файла
-func sendFilename(
-	filenamePath string,
-	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
-) error {
+func sendFilename(filenamePath string, stream streamR) error {
 	return stream.Send(&tgpb.DownloadVideoStreamResponse{
 		Data: &tgpb.DownloadVideoStreamResponse_Filename{
 			Filename: filepath.Base(filenamePath),
@@ -73,8 +85,8 @@ func sendFilename(
 	})
 }
 
-// sendChunks отправка чанками в стрим grpc
-func sendChunks(in <-chan []byte, stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse]) (chan []byte, error) {
+// sendChunks отправка чанков видео в gRPC
+func sendChunks(in <-chan []byte, stream streamR) (chan []byte, error) {
 	out := make(chan []byte)
 
 	go func() {
@@ -87,7 +99,7 @@ func sendChunks(in <-chan []byte, stream grpc.ServerStreamingServer[tgpb.Downloa
 				},
 			})
 			if err != nil {
-				log.Error().Err(err).Msg("error")
+				log.Error().Err(err).Msg("Failed to send chunk")
 				return
 			}
 
@@ -98,78 +110,15 @@ func sendChunks(in <-chan []byte, stream grpc.ServerStreamingServer[tgpb.Downloa
 	return out, nil
 }
 
-// uploadToS3 отправка чанками в стрим grpc
-func uploadToS3(in <-chan []byte, filename string) error {
+// uploadToS3 загрузка потока в S3
+func uploadToS3(s3Client *s3.Client, in <-chan []byte, filename string) (*minio.UploadInfo, error) {
 	fileName := filepath.Base(filename)
-
 	reader := util.NewChannelReader(in)
 
-	_, err := s3.UploadFile(context.TODO(), fileName, reader)
+	meta, err := s3Client.UploadStream(context.TODO(), fileName, reader)
 	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+		return nil, fmt.Errorf("uploading stream to S3 failed: %w", err)
 	}
 
-	return nil
-}
-
-// DownloadVideoStream создание потока из stdout
-func DownloadVideoStream(uri *url.URL) (<-chan []byte, string, error) {
-	// скачивание файла в папку temp
-	ch, fname, err := dl.DownloadStreamVideo(uri)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return nil, "", err
-	}
-	return ch, fname, nil
-}
-
-// DownloadVideoFile создание потока из чтения файла
-func DownloadVideoFile(uri *url.URL) (<-chan []byte, string, error) {
-	rootPath, err := os.Getwd()
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return nil, "", err
-	}
-
-	// скачивание файла в папку temp
-	fname, err := dl.DownloadVideo(uri, rootPath+"/temp")
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return nil, "", err
-	}
-
-	file, err := os.Open(fname)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return nil, "", err
-	}
-
-	out := make(chan []byte)
-
-	go func() {
-		defer file.Close()
-		defer close(out)
-
-		buffer := make([]byte, 1024*64)
-		for {
-			n, err := file.Read(buffer)
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Error().Err(err).Msg("error")
-				break
-			}
-
-			// при создании слайса выделяется память общая под данные
-			// и при отправке в канал слайс так и ссылается на одну область
-			// соответсвенно изменение вызывает состояние гонки
-			chunk := make([]byte, n)
-			copy(chunk, buffer[:n])
-			out <- chunk
-		}
-	}()
-
-	return out, fname, nil
+	return meta, nil
 }

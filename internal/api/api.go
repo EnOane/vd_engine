@@ -4,13 +4,14 @@ import (
 	"fmt"
 	tgpb "github.com/EnOane/vd_engine/generated"
 	"github.com/EnOane/vd_engine/internal/config"
+	"github.com/EnOane/vd_engine/internal/di"
 	"github.com/EnOane/vd_engine/internal/service"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"net"
 )
 
-type GrpcServer struct {
+type grpcServer struct {
 	tgpb.UnimplementedTgServiceServer
 }
 
@@ -22,7 +23,7 @@ func MustConnect() {
 
 	// Создаем gRPC-сервер
 	server := grpc.NewServer()
-	tgpb.RegisterTgServiceServer(server, &GrpcServer{})
+	tgpb.RegisterTgServiceServer(server, &grpcServer{})
 
 	log.Info().Msgf("Starting server on :50051")
 	if err := server.Serve(listener); err != nil {
@@ -31,9 +32,10 @@ func MustConnect() {
 }
 
 // DownloadVideoStream скачивание видео потоком
-func (s *GrpcServer) DownloadVideoStream(
+func (s *grpcServer) DownloadVideoStream(
 	request *tgpb.DownloadVideoStreamRequest,
 	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
 ) error {
-	return service.Execute(request, stream)
+	sr := di.Inject[*service.DownloadService]()
+	return sr.DownloadAndSendToClient(request, stream)
 }
