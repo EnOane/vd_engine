@@ -1,76 +1,41 @@
 package api
 
 import (
+	"fmt"
 	tgpb "github.com/EnOane/vd_engine/generated"
-	"github.com/EnOane/vd_engine/internal/service"
+	"github.com/EnOane/vd_engine/internal/config"
+	"github.com/EnOane/vd_engine/internal/core/interfaces"
+	"github.com/EnOane/vd_engine/internal/di"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
-	"net/url"
-	"path/filepath"
+	"net"
 )
 
-type GrpcServer struct {
+type grpcServer struct {
 	tgpb.UnimplementedTgServiceServer
 }
 
-func (s *GrpcServer) DownloadVideo(
-	request *tgpb.DownloadVideoRequest,
-	stream grpc.ServerStreamingServer[tgpb.DownloadVideoResponse],
-) error {
-	uri, err := url.Parse(request.Url)
+func MustConnect() {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", config.AppConfig.GrpcConfig.ApiPort))
 	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+		log.Fatal().Msgf("failed to listen: %v", err)
 	}
 
-	chunksCh, filenamePath, err := service.Execute(uri)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
-	}
+	// Создаем gRPC-сервер
+	server := grpc.NewServer()
+	tgpb.RegisterTgServiceServer(server, &grpcServer{})
 
-	// первое сообщение в потоке - имя файла
-	err = sendFilename(filenamePath, stream)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
+	log.Info().Msgf("Starting server on :50051")
+	if err := server.Serve(listener); err != nil {
+		log.Fatal().Msgf("failed to serve: %v", err)
 	}
-
-	err = sendChunks(chunksCh, stream)
-	if err != nil {
-		log.Error().Err(err).Msg("error")
-		return err
-	}
-
-	return nil
 }
 
-func sendFilename(
-	filenamePath string,
-	stream grpc.ServerStreamingServer[tgpb.DownloadVideoResponse],
+// DownloadVideoStream скачивание видео потоком
+func (s *grpcServer) DownloadVideoStream(
+	request *tgpb.DownloadVideoStreamRequest,
+	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
 ) error {
-	return stream.Send(&tgpb.DownloadVideoResponse{
-		Data: &tgpb.DownloadVideoResponse_Filename{
-			Filename: filepath.Base(filenamePath),
-		},
-	})
-}
-
-func sendChunks(
-	in <-chan []byte,
-	stream grpc.ServerStreamingServer[tgpb.DownloadVideoResponse],
-) error {
-	for data := range in {
-		err := stream.Send(&tgpb.DownloadVideoResponse{
-			Data: &tgpb.DownloadVideoResponse_Chunk{
-				Chunk: data,
-			},
-		})
-		if err != nil {
-			log.Error().Err(err).Msg("error")
-			return err
-		}
-	}
-
-	return nil
+	sr := di.Inject[interfaces.DownloadServiceInterface]()
+	return sr.DownloadAndSendToClient(request, stream)
 }
