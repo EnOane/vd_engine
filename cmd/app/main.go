@@ -1,16 +1,17 @@
 package main
 
 import (
-	"github.com/EnOane/vd_engine/internal/api"
+	"context"
 	"github.com/EnOane/vd_engine/internal/config"
-	"github.com/EnOane/vd_engine/internal/di"
-	"github.com/EnOane/vd_engine/internal/infr/s3"
+	"github.com/EnOane/vd_engine/internal/ports/api"
+	"github.com/EnOane/vd_engine/internal/service"
 )
 
 func main() {
-	di.MakeDIContainer()
+	service.MakeDIContainer()
+	conf := config.NewConfig()
 
-	config.MustLoad()
-	s3.MustConnect()
-	api.MustConnect()
+	ctx := context.Background()
+	app := service.NewApplication(ctx)
+	server := api.NewGrpcServer(conf)
 }

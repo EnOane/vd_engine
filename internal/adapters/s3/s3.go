@@ -4,24 +4,21 @@ import (
 	"context"
 	"fmt"
 	"github.com/EnOane/vd_engine/internal/config"
-	"github.com/EnOane/vd_engine/internal/core/interfaces"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
 	"io"
 )
 
+type S3Interface interface {
+	UploadStream(ctx context.Context, f string, r io.Reader) (*minio.UploadInfo, error)
+}
+
 type Client struct {
 	client *minio.Client
 }
 
-var minioClient *minio.Client
-
-func NewS3Client() interfaces.S3Interface {
-	return &Client{client: minioClient}
-}
-
-func MustConnect() {
+func NewS3Client() (S3Interface, error) {
 	endpoint := fmt.Sprintf("%v:%d",
 		config.AppConfig.S3Config.S3Host,
 		config.AppConfig.S3Config.S3Port,
@@ -34,11 +31,12 @@ func MustConnect() {
 	})
 	if err != nil {
 		log.Fatal().Err(err).Msg("error connect to MinIO")
+		return nil, err
 	}
 
 	log.Info().Msgf("S3: connected")
 
-	minioClient = mcl
+	return &Client{client: mcl}, nil
 }
 
 // UploadStream загружает поток в S3

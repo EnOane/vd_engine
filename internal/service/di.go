@@ -1,9 +1,8 @@
-package di
+package service
 
 import (
-	"github.com/EnOane/vd_engine/internal/core/interfaces"
-	"github.com/EnOane/vd_engine/internal/infr/s3"
-	"github.com/EnOane/vd_engine/internal/service"
+	"github.com/EnOane/vd_engine/internal/adapters/s3"
+	"github.com/EnOane/vd_engine/internal/domain/media_fetcher"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/dig"
 )
@@ -17,11 +16,11 @@ func MakeDIContainer() {
 }
 
 func makeProviders() {
-	Container.Provide(func() interfaces.S3Interface {
+	Container.Provide(func() s3.S3Interface {
 		return s3.NewS3Client()
 	})
-	Container.Provide(func(s interfaces.S3Interface) interfaces.DownloadServiceInterface {
-		return service.NewDownloadService(s)
+	Container.Provide(func(s s3.S3Interface) media_fetcher.DownloadServiceInterface {
+		return media_fetcher.NewDownloadService(s)
 	})
 }
 
