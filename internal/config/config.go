@@ -35,14 +35,12 @@ type Config struct {
 	S3Config   s3Config
 }
 
-var AppConfig Config
-
-func MustLoad() {
+func NewConfig() *Config {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal().Msg("No .env file found")
 	}
 
-	AppConfig = Config{
+	AppConfig := Config{
 		GrpcConfig: grpcConfig{
 			ApiHost: getEnv("API_HOST", ""),
 			ApiPort: getEnvAsInt("API_PORT", 50051),
@@ -63,6 +61,7 @@ func MustLoad() {
 			S3Region:    getEnv("S3_REGION", ""),
 		},
 	}
+	return &AppConfig
 }
 
 func getEnv(key string, defaultVal string) string {

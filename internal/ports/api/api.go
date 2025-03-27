@@ -4,8 +4,8 @@ import (
 	"fmt"
 	tgpb "github.com/EnOane/vd_engine/generated"
 	"github.com/EnOane/vd_engine/internal/config"
-	"github.com/EnOane/vd_engine/internal/core/interfaces"
-	"github.com/EnOane/vd_engine/internal/di"
+	"github.com/EnOane/vd_engine/internal/domain/media_fetcher"
+	"github.com/EnOane/vd_engine/internal/service"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"net"
@@ -15,13 +15,12 @@ type grpcServer struct {
 	tgpb.UnimplementedTgServiceServer
 }
 
-func MustConnect() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", config.AppConfig.GrpcConfig.ApiPort))
+func NewGrpcServer(config *config.Config) {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcConfig.ApiPort))
 	if err != nil {
 		log.Fatal().Msgf("failed to listen: %v", err)
 	}
 
-	// Создаем gRPC-сервер
 	server := grpc.NewServer()
 	tgpb.RegisterTgServiceServer(server, &grpcServer{})
 
@@ -31,11 +30,10 @@ func MustConnect() {
 	}
 }
 
-// DownloadVideoStream скачивание видео потоком
 func (s *grpcServer) DownloadVideoStream(
 	request *tgpb.DownloadVideoStreamRequest,
 	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
 ) error {
-	sr := di.Inject[interfaces.DownloadServiceInterface]()
+	sr := service.Inject[media_fetcher.DownloadServiceInterface]()
 	return sr.DownloadAndSendToClient(request, stream)
 }
