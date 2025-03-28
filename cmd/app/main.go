@@ -1,16 +1,19 @@
 package main
 
 import (
-	"github.com/EnOane/vd_engine/internal/api"
-	"github.com/EnOane/vd_engine/internal/config"
-	"github.com/EnOane/vd_engine/internal/di"
-	"github.com/EnOane/vd_engine/internal/infr/s3"
+	"vd_engine/internal/api"
+	"vd_engine/internal/config"
+	"vd_engine/internal/di"
+	"vd_engine/internal/infr/brokers"
+	"vd_engine/internal/infr/s3"
 )
 
 func main() {
+	config.MustLoad()
+
 	di.MakeDIContainer()
 
-	config.MustLoad()
+	brokers.MustConnect()
 	s3.MustConnect()
-	api.MustConnect()
+	api.MustServe()
 }
