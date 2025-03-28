@@ -17,13 +17,7 @@ FROM alpine:3.18
 
 # Устанавливаем необходимые зависимости
 RUN apk add --no-cache \
-    ca-certificates \
-    ffmpeg \
-    python3 \
-    py3-pip
-
-# Устанавливаем yt-dlp
-RUN pip3 install --upgrade yt-dlp
+    ca-certificates
 
 WORKDIR /
 

@@ -2,7 +2,9 @@ package util
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"os"
 )
 
 // ChannelReader - ридер для чтения данных из канала
@@ -39,4 +41,28 @@ func (r *ChannelReader) Read(p []byte) (n int, err error) {
 	}
 
 	return r.buffer.Read(p)
+}
+
+func (r *ChannelReader) ToFile(f *os.File, bufferSize int) error {
+	var b []byte
+	if bufferSize != 0 {
+		b = make([]byte, bufferSize)
+	} else {
+		b = make([]byte, 1024)
+	}
+
+	for {
+		n, err := r.Read(b)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return fmt.Errorf("%w", err)
+		}
+
+		_, err = f.Write(b[:n])
+		if err != nil {
+			return fmt.Errorf("%w", err)
+		}
+	}
 }
