@@ -7,12 +7,12 @@ import (
 	"strconv"
 )
 
-type grpcConfig struct {
+type GrpcConfig struct {
 	ApiHost string
 	ApiPort int
 }
 
-type dbConfig struct {
+type DBConfig struct {
 	DbHost string
 	DbPort int
 	DbMain string
@@ -20,7 +20,7 @@ type dbConfig struct {
 	DbUser string
 }
 
-type s3Config struct {
+type S3Config struct {
 	S3Host      string
 	S3Port      int
 	S3Bucket    string
@@ -30,31 +30,29 @@ type s3Config struct {
 }
 
 type Config struct {
-	GrpcConfig grpcConfig
-	DbConfig   dbConfig
-	S3Config   s3Config
+	GrpcConfig GrpcConfig
+	DbConfig   DBConfig
+	S3Config   S3Config
 }
 
-var AppConfig Config
-
-func MustLoad() {
+func NewConfig() *Config {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal().Msg("No .env file found")
 	}
 
-	AppConfig = Config{
-		GrpcConfig: grpcConfig{
+	AppConfig := Config{
+		GrpcConfig: GrpcConfig{
 			ApiHost: getEnv("API_HOST", ""),
 			ApiPort: getEnvAsInt("API_PORT", 50051),
 		},
-		DbConfig: dbConfig{
+		DbConfig: DBConfig{
 			DbHost: getEnv("DB_HOST", ""),
 			DbPort: getEnvAsInt("DB_PORT", 5432),
 			DbMain: getEnv("DB_MAIN", ""),
 			DbUser: getEnv("DB_USERNAME", ""),
 			DbPass: getEnv("DB_PASSWORD", ""),
 		},
-		S3Config: s3Config{
+		S3Config: S3Config{
 			S3Host:      getEnv("S3_HOST", ""),
 			S3Port:      getEnvAsInt("S3_PORT", 9000),
 			S3Bucket:    getEnv("S3_BUCKET", ""),
@@ -63,6 +61,7 @@ func MustLoad() {
 			S3Region:    getEnv("S3_REGION", ""),
 		},
 	}
+	return &AppConfig
 }
 
 func getEnv(key string, defaultVal string) string {
