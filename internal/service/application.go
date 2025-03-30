@@ -3,15 +3,16 @@ package service
 import (
 	"context"
 	s3client "github.com/EnOane/vd_engine/internal/adapters/s3"
+	"github.com/EnOane/vd_engine/internal/config"
 	"github.com/EnOane/vd_engine/internal/domain/media_fetcher"
 )
 
 type Application struct {
-	downloader media_fetcher.DownloadServiceInterface
+	Downloader media_fetcher.DownloadServiceInterface
 }
 
-func NewApplication(ctx context.Context) *Application {
-	s3, err := s3client.NewS3Client()
+func NewApplication(ctx context.Context, conf *config.Config) *Application {
+	s3, err := s3client.NewS3Client(conf.S3Config)
 	if err != nil {
 		panic(err)
 	}

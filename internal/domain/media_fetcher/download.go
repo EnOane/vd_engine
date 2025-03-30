@@ -6,7 +6,6 @@ import (
 	dl "github.com/EnOane/cli_downloader/pkg/downloader"
 	tgpb "github.com/EnOane/vd_engine/generated"
 	"github.com/EnOane/vd_engine/internal/adapters/s3"
-	"github.com/EnOane/vd_engine/internal/service"
 	"github.com/minio/minio-go/v7"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
@@ -117,7 +116,7 @@ func sendChunks(in <-chan []byte, stream streamR) (chan []byte, error) {
 // uploadToS3 загрузка потока в S3
 func uploadToS3(s3Client s3.S3Interface, in <-chan []byte, filename string) (*minio.UploadInfo, error) {
 	fileName := filepath.Base(filename)
-	reader := service.NewChannelReader(in)
+	reader := s3.NewChannelReader(in)
 
 	meta, err := s3Client.UploadStream(context.TODO(), fileName, reader)
 	if err != nil {

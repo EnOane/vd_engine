@@ -3,7 +3,7 @@ package s3
 import (
 	"context"
 	"fmt"
-	"github.com/EnOane/vd_engine/internal/config"
+	conf "github.com/EnOane/vd_engine/internal/config"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
@@ -16,18 +16,19 @@ type S3Interface interface {
 
 type Client struct {
 	client *minio.Client
+	s3Conf conf.S3Config
 }
 
-func NewS3Client() (S3Interface, error) {
+func NewS3Client(s3Conf conf.S3Config) (S3Interface, error) {
 	endpoint := fmt.Sprintf("%v:%d",
-		config.AppConfig.S3Config.S3Host,
-		config.AppConfig.S3Config.S3Port,
+		s3Conf.S3Host,
+		s3Conf.S3Port,
 	)
 
 	mcl, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(config.AppConfig.S3Config.S3AccessKey, config.AppConfig.S3Config.S3SecretKey, ""),
+		Creds:  credentials.NewStaticV4(s3Conf.S3AccessKey, s3Conf.S3SecretKey, ""),
 		Secure: false,
-		Region: config.AppConfig.S3Config.S3Region,
+		Region: s3Conf.S3Region,
 	})
 	if err != nil {
 		log.Fatal().Err(err).Msg("error connect to MinIO")
@@ -41,6 +42,6 @@ func NewS3Client() (S3Interface, error) {
 
 // UploadStream загружает поток в S3
 func (s3 *Client) UploadStream(ctx context.Context, filename string, reader io.Reader) (*minio.UploadInfo, error) {
-	m, err := s3.client.PutObject(ctx, config.AppConfig.S3Config.S3Bucket, filename, reader, -1, minio.PutObjectOptions{})
+	m, err := s3.client.PutObject(ctx, s3.s3Conf.S3Bucket, filename, reader, -1, minio.PutObjectOptions{})
 	return &m, err
 }
