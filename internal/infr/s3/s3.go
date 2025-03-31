@@ -3,12 +3,12 @@ package s3
 import (
 	"context"
 	"fmt"
-	"github.com/EnOane/vd_engine/internal/config"
-	"github.com/EnOane/vd_engine/internal/core/interfaces"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/rs/zerolog/log"
 	"io"
+	"vd_engine/internal/config"
+	"vd_engine/internal/core/interfaces"
 )
 
 type Client struct {

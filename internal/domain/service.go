@@ -1,20 +1,20 @@
-package service
+package domain
 
 import (
 	"context"
 	"fmt"
-	dl "github.com/EnOane/cli_downloader/pkg/downloader"
-	tgpb "github.com/EnOane/vd_engine/generated"
-	"github.com/EnOane/vd_engine/internal/core/interfaces"
-	"github.com/EnOane/vd_engine/internal/util"
+	"github.com/EnOane/transports/pkg/grpc/vd_engine"
 	"github.com/minio/minio-go/v7"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"net/url"
 	"path/filepath"
+	"vd_engine/internal/core/interfaces"
+	"vd_engine/internal/di"
+	"vd_engine/internal/util"
 )
 
-type streamR grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse]
+type streamR grpc.ServerStreamingServer[vd_engine.DownloadVideoStreamResponse]
 
 type DownloadService struct {
 	s3 interfaces.S3Interface
@@ -25,8 +25,8 @@ func NewDownloadService(s3 interfaces.S3Interface) interfaces.DownloadServiceInt
 }
 
 func (d *DownloadService) DownloadAndSendToClient(
-	request *tgpb.DownloadVideoStreamRequest,
-	stream grpc.ServerStreamingServer[tgpb.DownloadVideoStreamResponse],
+	request *vd_engine.DownloadVideoStreamRequest,
+	stream grpc.ServerStreamingServer[vd_engine.DownloadVideoStreamResponse],
 ) error {
 	// Проверка URL
 	uri, err := url.Parse(request.Url)
@@ -69,7 +69,9 @@ func (d *DownloadService) DownloadAndSendToClient(
 
 // downloadVideoStream создание видео потока
 func downloadVideoStream(uri *url.URL) (<-chan []byte, string, error) {
-	ch, fname, err := dl.DownloadStreamVideo(uri)
+	dl := di.Inject[interfaces.Downloader]()
+
+	ch, fname, err := dl.DownloadStreamVideo(uri.String())
 	if err != nil {
 		return nil, "", fmt.Errorf("downloading video failed: %w", err)
 	}
@@ -78,8 +80,8 @@ func downloadVideoStream(uri *url.URL) (<-chan []byte, string, error) {
 
 // sendFilename отправка имени файла
 func sendFilename(filenamePath string, stream streamR) error {
-	return stream.Send(&tgpb.DownloadVideoStreamResponse{
-		Data: &tgpb.DownloadVideoStreamResponse_Filename{
+	return stream.Send(&vd_engine.DownloadVideoStreamResponse{
+		Data: &vd_engine.DownloadVideoStreamResponse_Filename{
 			Filename: filepath.Base(filenamePath),
 		},
 	})
@@ -93,8 +95,8 @@ func sendChunks(in <-chan []byte, stream streamR) (chan []byte, error) {
 		defer close(out)
 
 		for data := range in {
-			err := stream.Send(&tgpb.DownloadVideoStreamResponse{
-				Data: &tgpb.DownloadVideoStreamResponse_Chunk{
+			err := stream.Send(&vd_engine.DownloadVideoStreamResponse{
+				Data: &vd_engine.DownloadVideoStreamResponse_Chunk{
 					Chunk: data,
 				},
 			})

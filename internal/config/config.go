@@ -12,6 +12,11 @@ type grpcConfig struct {
 	ApiPort int
 }
 
+type natsConfig struct {
+	Host string
+	Port int
+}
+
 type dbConfig struct {
 	DbHost string
 	DbPort int
@@ -31,6 +36,7 @@ type s3Config struct {
 
 type Config struct {
 	GrpcConfig grpcConfig
+	NatsConfig natsConfig
 	DbConfig   dbConfig
 	S3Config   s3Config
 }
@@ -44,8 +50,8 @@ func MustLoad() {
 
 	AppConfig = Config{
 		GrpcConfig: grpcConfig{
-			ApiHost: getEnv("API_HOST", ""),
-			ApiPort: getEnvAsInt("API_PORT", 50051),
+			ApiHost: getEnv("API_GRPC_HOST", ""),
+			ApiPort: getEnvAsInt("API_GRPC_PORT", 50051),
 		},
 		DbConfig: dbConfig{
 			DbHost: getEnv("DB_HOST", ""),
