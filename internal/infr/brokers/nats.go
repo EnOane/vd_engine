@@ -29,11 +29,8 @@ func NewNatsBroker() *NatsBroker {
 }
 
 func (b *NatsBroker) GetStream(url string) (<-chan []byte, error) {
-	return exe(b.Conn, url)
-}
-
-func exe(nc *nats.Conn, url string) (<-chan []byte, error) {
-	return nil, nil
+	in := ps(b.Conn, url)
+	return in, nil
 }
 
 func ps(nc *nats.Conn, url string) <-chan []byte {

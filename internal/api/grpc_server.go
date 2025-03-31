@@ -9,6 +9,7 @@ import (
 	"vd_engine/internal/config"
 	"vd_engine/internal/core/interfaces"
 	"vd_engine/internal/di"
+	"vd_engine/internal/domain"
 )
 
 type grpcServer struct {
@@ -35,6 +36,6 @@ func (s *grpcServer) DownloadVideoStream(
 	request *vd_engine.DownloadVideoStreamRequest,
 	stream grpc.ServerStreamingServer[vd_engine.DownloadVideoStreamResponse],
 ) error {
-	sr := di.Inject[interfaces.DownloadServiceInterface]()
-	return sr.DownloadAndSendToClient(request, stream)
+	ls := domain.NewDownloadService(di.Inject[interfaces.S3Interface]())
+	return ls.DownloadAndSendToClient(request, stream)
 }
